@@ -12,7 +12,7 @@ Resources:
     Runtime: java8
     CodeUri: target/LambdaDynamoSpringBoot-0.0.1-SNAPSHOT.jar
     MemorySize: 512
-    Role: LambdaDynamoDbRole
+    Role: arn:aws:iam::323091370715:role/LambdaDynamoDbRole
     Timeout: 60
     Events:
      GetResource:

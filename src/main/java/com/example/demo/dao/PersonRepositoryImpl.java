@@ -18,19 +18,24 @@ import com.amazonaws.services.dynamodbv2.document.utils.ValueMap;
 import com.amazonaws.services.dynamodbv2.model.ConditionalCheckFailedException;
 import com.example.demo.pojo.Person;
 
+import lombok.extern.slf4j.Slf4j;
+
 @Component
+@Slf4j
 public class PersonRepositoryImpl implements IPersonRepository{
 
-	 private DynamoDB dynamoDb;
+	 private DynamoDB dynamoDbOrDaxClient;
+	 
 	    private String DYNAMODB_TABLE_NAME = "Person";
-	    public PersonRepositoryImpl(DynamoDB db) {
-	    	this.dynamoDb = db;
+	    public PersonRepositoryImpl(DynamoDB dbClient) {
+	    	this.dynamoDbOrDaxClient = dbClient;
 	    }
 	    
 	@Override
 	public PutItemOutcome savePerson(Person person) throws ConditionalCheckFailedException{
+		
 		System.out.println("first name"+person.getFirstName());
-        return this.dynamoDb.getTable(DYNAMODB_TABLE_NAME)
+        return this.dynamoDbOrDaxClient.getTable(DYNAMODB_TABLE_NAME)
           .putItem(
             new PutItemSpec().withItem(new Item()
               .withString("firstName", person.getFirstName())
@@ -40,15 +45,18 @@ public class PersonRepositoryImpl implements IPersonRepository{
     
 	}
 
+	//with DynamoDB or Dax client
 	@Override
 	public Person getPerson(String id) {
+		System.out.println("getting person");
 		// TODO Auto-generated method stub
-		
+		 long startTime = System.nanoTime();
+		 double duration = 0;
 		QuerySpec spec  = new QuerySpec().
 				withKeyConditionExpression("personId = :person_id").
 				withValueMap(new ValueMap()
 						.withString(":person_id", id));
-		ItemCollection<QueryOutcome> items = this.dynamoDb.
+		ItemCollection<QueryOutcome> items = this.dynamoDbOrDaxClient.
 				getTable(DYNAMODB_TABLE_NAME).query(spec);
 		List<Person>personList = new ArrayList<>();
 		Iterator<Item> iterator = items.iterator();
@@ -59,11 +67,15 @@ public class PersonRepositoryImpl implements IPersonRepository{
 		  person.setLastName(String.valueOf(item.get("lastName")));
 		  person.setPersonId(UUID.fromString(String.valueOf(item.get("personId"))));
 		  personList.add(person);
+		  
 		}
 		if(personList.size() == 1) {
 			return personList.get(0);
 		}
+		duration = (System.nanoTime() - startTime);
+        log.info("FetchTime = " + duration  + " nano seconds");
 		return null;
 	}
+	
 
 }
